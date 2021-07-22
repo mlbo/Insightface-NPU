@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
+
+    defaultConfig {
+        applicationId "com.oal.insightface"
+        archivesBaseName = "$applicationId"
+        minSdkVersion 24
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            moduleName "tengine-lite"
+            abiFilters "armeabi-v7a", "arm64-v8a"
+            ndkVersion "21.3.6528147"
+        }
+
+
+    }
+
+    externalNativeBuild {
+        cmake {
+            version "3.10.2"
+            path file('src/main/jni/CMakeLists.txt')
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    sourceSets {
+        main {
+            // The libs directory contains prebuilt libraries that are used by the
+            // app's library defined in CMakeLists.txt via an IMPORTED target.
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+dependencies {
+//    implementation fileTree(dir: 'libs', include: ['*.jar','*.aar'])
+//    implementation 'com.android.support:support-v4:24.0.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+
+    implementation "androidx.camera:camera-core:1.0.0-alpha02"
+    implementation "androidx.camera:camera-camera2:1.0.0-alpha02"
+}

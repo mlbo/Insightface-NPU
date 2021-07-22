@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/detct_NPU"
+        android:layout_width="160dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:background="@android:color/holo_blue_light"
+        android:text="NPU推理"
+        android:textSize="20dp" />
+
+    <Button
+        android:id="@+id/detct_CPU"
+        android:layout_width="160dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:background="@android:color/holo_blue_light"
+        android:text="CPU推理"
+        android:textSize="20dp" />
+
+    <Button
+        android:id="@+id/detct_CameraX"
+        android:layout_width="160dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:background="@android:color/holo_blue_light"
+        android:text="NPU推理CameraX版"
+        android:textSize="20dp" />
+
+</LinearLayout>
