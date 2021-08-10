@@ -27,10 +27,10 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "AndroidLog.h"
 #include "algorithm/scrfd.hpp"
-//#include "utility/cmdline.hpp"
 #include "utility/timer.hpp"
 #include <algorithm>
 #include <numeric>
@@ -76,7 +76,6 @@ static int draw_face(cv::Mat &rgb, std::vector<region> &faces) {
                    cv::Scalar(255, 255, 0), -1);
         cv::circle(image_flip, cv::Point(face.landmark[4].x, face.landmark[4].y), 2,
                    cv::Scalar(255, 255, 0), -1);
-//        cv::rotate(image_flip, image_flip, cv::ROTATE_180);
     }
 
     return 0;
@@ -101,57 +100,6 @@ static int draw_unsupported(cv::Mat &rgb) {
     return 0;
 }
 
-static int draw_fps(cv::Mat &rgb) {
-    // resolve moving average
-    float avg_fps = 0.f;
-    {
-        static double t0 = 0.f;
-        static float fps_history[10] = {0.f};
-
-//        double t1 = ncnn::get_current_time();
-        double t1 = 0.5;
-        if (t0 == 0.f) {
-            t0 = t1;
-            return 0;
-        }
-
-        float fps = 1000.f / (t1 - t0);
-        t0 = t1;
-
-        for (int i = 9; i >= 1; i--) {
-            fps_history[i] = fps_history[i - 1];
-        }
-        fps_history[0] = fps;
-
-        if (fps_history[9] == 0.f) {
-            return 0;
-        }
-
-        for (int i = 0; i < 10; i++) {
-            avg_fps += fps_history[i];
-        }
-        avg_fps /= 10.f;
-    }
-
-    char text[32];
-    sprintf(text, "FPS=%.2f", avg_fps);
-
-    int baseLine = 0;
-    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-
-    int y = 0;
-    int x = rgb.cols - label_size.width;
-
-    cv::rectangle(rgb, cv::Rect(cv::Point(x, y),
-                                cv::Size(label_size.width, label_size.height + baseLine)),
-                  cv::Scalar(255, 255, 255), -1);
-
-    cv::putText(rgb, text, cv::Point(x, y + label_size.height),
-                cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
-
-    return 0;
-}
-
 static SCRFD *scrfdface;
 
 class MyNdkCamera : public NdkCameraWindow {
@@ -167,17 +115,12 @@ void MyNdkCamera::on_image_render(cv::Mat &rgb) const {
 
         cv::Mat image_ori, image_flip;
         image_ori = rgb;
-//        Timer det_timer;
 
-        cv::rotate(rgb, rgb, cv::ROTATE_180);
         image_flip = rgb;
-//        cv::rotate(image_flip, image_flip, cv::ROTATE_180);
         Timer det_timer;
-//        det_timer.Start();
         scrfdface->Detect(image_flip, faces, score_threshold, iou_threshold);
         double cost_time = det_timer.TimeCost();
-        __android_log_print(ANDROID_LOG_DEBUG, "CostTime", "CostTime %.2f", cost_time);
-//        det_timer.Stop();
+//        __android_log_print(ANDROID_LOG_DEBUG, "CostTime", "CostTime %.2f", cost_time);
         draw_face(image_flip, faces);
     } else {
         draw_unsupported(rgb);
@@ -206,6 +149,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     __android_log_print(ANDROID_LOG_DEBUG, "Tengine", "JNI_OnLoad");
 
     g_camera = new MyNdkCamera;
+    g_camera->camera_facing=1; //TIM3
 
     return JNI_VERSION_1_4;
 }
@@ -247,53 +191,6 @@ Java_com_oal_insightface_FaceTengine_loadModel(JNIEnv *env, jobject thiz, jint c
     return JNI_TRUE;
 }
 
-
-JNIEXPORT jboolean JNICALL
-Java_com_oal_insightface_FaceTengine_detectDraw(JNIEnv *env, jobject thiz, jint jw, jint jh,
-                                                jintArray jPixArr) {
-    jint *cPixArr = env->GetIntArrayElements(jPixArr, JNI_FALSE);
-    if (cPixArr == NULL) {
-        return JNI_FALSE;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // 用传入的数组构建Mat，然后从RGBA转成RGB
-    cv::Mat mat_image_src(jh, jw, CV_8UC4, (unsigned char *) cPixArr);
-    cv::Mat rgb;
-    cvtColor(mat_image_src, rgb, cv::COLOR_RGBA2RGB, 3);
-
-    if (scrfdface) {
-        auto score_threshold = DEFAULT_SCORE_THRESHOLD;
-        auto iou_threshold = DEFAULT_NMS_THRESHOLD;
-        std::vector<region> faces;
-
-        cv::Mat image_ori, image_flip;
-        image_ori = rgb;
-//        Timer det_timer;
-
-//        cv::rotate(rgb, rgb, cv::ROTATE_180);
-        image_flip = rgb;
-//        cv::rotate(image_flip, image_flip, cv::ROTATE_180);
-        Timer det_timer;
-//        det_timer.Start();
-        scrfdface->Detect(image_flip, faces, score_threshold, iou_threshold);
-        double cost_time = det_timer.TimeCost();
-        __android_log_print(ANDROID_LOG_DEBUG, "CostTime", "CostTime %.2f", cost_time);
-//        det_timer.Stop();
-        draw_face(image_flip, faces);
-    } else {
-        draw_unsupported(rgb);
-    }
-
-
-    // 将Mat从RGB转回去RGBA刷新java数据
-    cvtColor(rgb, mat_image_src, cv::COLOR_RGB2RGBA, 4);
-    // 释放掉C数组
-    env->ReleaseIntArrayElements(jPixArr, cPixArr, 0);
-
-    return JNI_TRUE;
-}
 
 
 // public native boolean openCamera(int facing);

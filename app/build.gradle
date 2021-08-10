@@ -4,11 +4,10 @@ plugins {
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.oal.insightface"
-        archivesBaseName = "$applicationId"
         minSdkVersion 24
         targetSdkVersion 30
         versionCode 1
@@ -18,8 +17,16 @@ android {
 
         ndk {
             moduleName "tengine-lite"
-            abiFilters "armeabi-v7a", "arm64-v8a"
-            ndkVersion "21.3.6528147"
+            abiFilters "armeabi-v7a",'arm64-v8a'
+            ndkVersion "21.4.7075529"
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+                cppFlags "-std=c++11", "-fexceptions", "-frtti"
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
+            }
         }
 
 

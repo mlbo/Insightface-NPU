@@ -24,14 +24,14 @@
         android:text="CPU推理"
         android:textSize="20dp" />
 
-    <Button
-        android:id="@+id/detct_CameraX"
-        android:layout_width="160dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:layout_marginTop="50dp"
-        android:background="@android:color/holo_blue_light"
-        android:text="NPU推理CameraX版"
-        android:textSize="20dp" />
+<!--    <Button-->
+<!--        android:id="@+id/detct_CameraX"-->
+<!--        android:layout_width="160dp"-->
+<!--        android:layout_height="100dp"-->
+<!--        android:layout_gravity="center"-->
+<!--        android:layout_marginTop="50dp"-->
+<!--        android:background="@android:color/holo_blue_light"-->
+<!--        android:text="NPU推理CameraX版"-->
+<!--        android:textSize="20dp" />-->
 
 </LinearLayout>

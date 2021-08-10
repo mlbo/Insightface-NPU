@@ -3,7 +3,6 @@ package com.oal.insightface;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
@@ -12,9 +11,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.Spinner;
 
 import androidx.core.app.ActivityCompat;
@@ -32,7 +29,7 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
     private Spinner spinnerModel;
     private Spinner spinnerCPUGPU;
     private int current_model = 0;
-    private int current_cpugpu = 1;
+    private int current_cpunpu = 1;
 
     private SurfaceView cameraView;
 
@@ -47,7 +44,7 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
         FileUtils.copyAllAssets(this, "sdcard/OAL/");
 
         String sID = getIntent().getStringExtra("current_cpugpu");
-        current_cpugpu = Integer.parseInt(sID);
+        current_cpunpu = Integer.parseInt(sID);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -60,7 +57,7 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
 
     private void reload() {
 
-        boolean ret_init = facetengine.loadModel(current_cpugpu);
+        boolean ret_init = facetengine.loadModel(current_cpunpu);
         if (!ret_init) {
             Log.e("MainActivity", "Tengine loadModel failed");
         }
@@ -77,10 +74,13 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        cameraView.setVisibility(View.GONE);
+        facetengine.closeCamera();
     }
 
     @Override
     public void onResume() {
+        cameraView.setVisibility(View.VISIBLE);
         super.onResume();
 
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
@@ -93,7 +93,7 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
     @Override
     public void onPause() {
         super.onPause();
-
+        cameraView.setVisibility(View.GONE);
         facetengine.closeCamera();
     }
 

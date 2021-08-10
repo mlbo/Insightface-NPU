@@ -5,12 +5,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.Button;
 
 import com.oal.insightface.utils.PermissionUtils;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity  {
 
     private int current_cpugpu = 1;
 
@@ -37,13 +38,13 @@ public class MainActivity extends Activity {
             }
         });
 
-        Button buttonCameraX = (Button) findViewById(R.id.detct_CameraX);
-        buttonCameraX.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View arg0) {
-                jumpToCameraXActivity();
-            }
-        });
+//        Button buttonCameraX = (Button) findViewById(R.id.detct_CameraX);
+//        buttonCameraX.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View arg0) {
+//                jumpToCameraXActivity();
+//            }
+//        });
     }
 
     private void startVideoWithFaceDetected() {

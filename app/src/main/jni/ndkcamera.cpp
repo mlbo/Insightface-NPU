@@ -503,19 +503,19 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
 
                 if (acceleration_y > 7)
                 {
-                    accelerometer_orientation = 0;
+                    accelerometer_orientation = 180;
                 }
                 if (acceleration_x < -7)
                 {
-                    accelerometer_orientation = 90;
+                    accelerometer_orientation = 270;
                 }
                 if (acceleration_y < -7)
                 {
-                    accelerometer_orientation = 180;
+                    accelerometer_orientation = 0;
                 }
                 if (acceleration_x > 7)
                 {
-                    accelerometer_orientation = 270;
+                    accelerometer_orientation = 90;
                 }
             }
         }
@@ -592,67 +592,67 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
 
         if (camera_facing == 0)
         {
-            if (camera_orientation == 0 && accelerometer_orientation == 0)
-            {
-                rotate_type = 2;
-            }
-            if (camera_orientation == 0 && accelerometer_orientation == 90)
-            {
-                rotate_type = 7;
-            }
             if (camera_orientation == 0 && accelerometer_orientation == 180)
             {
-                rotate_type = 4;
+                rotate_type = 2;
             }
             if (camera_orientation == 0 && accelerometer_orientation == 270)
             {
-                rotate_type = 5;
+                rotate_type = 7;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 0)
+            if (camera_orientation == 0 && accelerometer_orientation == 0)
+            {
+                rotate_type = 4;
+            }
+            if (camera_orientation == 0 && accelerometer_orientation == 90)
             {
                 rotate_type = 5;
-            }
-            if (camera_orientation == 90 && accelerometer_orientation == 90)
-            {
-                rotate_type = 2;
             }
             if (camera_orientation == 90 && accelerometer_orientation == 180)
             {
-                rotate_type = 7;
+                rotate_type = 5;
             }
             if (camera_orientation == 90 && accelerometer_orientation == 270)
             {
-                rotate_type = 4;
+                rotate_type = 2;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 0)
+            if (camera_orientation == 90 && accelerometer_orientation == 0)
+            {
+                rotate_type = 7;
+            }
+            if (camera_orientation == 90 && accelerometer_orientation == 90)
             {
                 rotate_type = 4;
-            }
-            if (camera_orientation == 180 && accelerometer_orientation == 90)
-            {
-                rotate_type = 5;
             }
             if (camera_orientation == 180 && accelerometer_orientation == 180)
             {
-                rotate_type = 2;
+                rotate_type = 4;
             }
             if (camera_orientation == 180 && accelerometer_orientation == 270)
             {
-                rotate_type = 7;
+                rotate_type = 5;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 0)
+            if (camera_orientation == 180 && accelerometer_orientation == 0)
+            {
+                rotate_type = 2;
+            }
+            if (camera_orientation == 180 && accelerometer_orientation == 90)
             {
                 rotate_type = 7;
-            }
-            if (camera_orientation == 270 && accelerometer_orientation == 90)
-            {
-                rotate_type = 4;
             }
             if (camera_orientation == 270 && accelerometer_orientation == 180)
             {
-                rotate_type = 5;
+                rotate_type = 7;
             }
             if (camera_orientation == 270 && accelerometer_orientation == 270)
+            {
+                rotate_type = 4;
+            }
+            if (camera_orientation == 270 && accelerometer_orientation == 00)
+            {
+                rotate_type = 5;
+            }
+            if (camera_orientation == 270 && accelerometer_orientation == 90)
             {
                 rotate_type = 2;
             }
