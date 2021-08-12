@@ -1,4 +1,4 @@
-// Tencent is pleased to support the open source community by making ncnn available.
+// Tencent is pleased to support the open source community by making Rotate available.
 //
 // Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -12,7 +12,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#include "ndkcamera.h"
+#include "include/ndkcamera.h"
 
 #include <string>
 
@@ -20,27 +20,24 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "mat.h"
+#include "YuvConverter.h"
+#include "ImageRotate.h"
 
-static void onDisconnected(void* context, ACameraDevice* device)
-{
+static void onDisconnected(void *context, ACameraDevice *device) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onDisconnected %p", device);
 }
 
-static void onError(void* context, ACameraDevice* device, int error)
-{
+static void onError(void *context, ACameraDevice *device, int error) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onError %p %d", device, error);
 }
 
-static void onImageAvailable(void* context, AImageReader* reader)
-{
+static void onImageAvailable(void *context, AImageReader *reader) {
 //     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onImageAvailable %p", reader);
 
-    AImage* image = 0;
+    AImage *image = 0;
     media_status_t status = AImageReader_acquireLatestImage(reader, &image);
 
-    if (status != AMEDIA_OK)
-    {
+    if (status != AMEDIA_OK) {
         // error
         return;
     }
@@ -69,9 +66,9 @@ static void onImageAvailable(void* context, AImageReader* reader)
     AImage_getPlaneRowStride(image, 1, &u_rowStride);
     AImage_getPlaneRowStride(image, 2, &v_rowStride);
 
-    uint8_t* y_data = 0;
-    uint8_t* u_data = 0;
-    uint8_t* v_data = 0;
+    uint8_t *y_data = 0;
+    uint8_t *u_data = 0;
+    uint8_t *v_data = 0;
     int y_len = 0;
     int u_len = 0;
     int v_len = 0;
@@ -79,23 +76,20 @@ static void onImageAvailable(void* context, AImageReader* reader)
     AImage_getPlaneData(image, 1, &u_data, &u_len);
     AImage_getPlaneData(image, 2, &v_data, &v_len);
 
-    if (u_data == v_data + 1 && v_data == y_data + width * height && y_pixelStride == 1 && u_pixelStride == 2 && v_pixelStride == 2 && y_rowStride == width && u_rowStride == width && v_rowStride == width)
-    {
+    if (u_data == v_data + 1 && v_data == y_data + width * height && y_pixelStride == 1 &&
+        u_pixelStride == 2 && v_pixelStride == 2 && y_rowStride == width && u_rowStride == width &&
+        v_rowStride == width) {
         // already nv21  :)
-        ((NdkCamera*)context)->on_image((unsigned char*)y_data, (int)width, (int)height);
-    }
-    else
-    {
+        ((NdkCamera *) context)->on_image((unsigned char *) y_data, (int) width, (int) height);
+    } else {
         // construct nv21
-        unsigned char* nv21 = new unsigned char[width * height + width * height / 2];
+        unsigned char *nv21 = new unsigned char[width * height + width * height / 2];
         {
             // Y
-            unsigned char* yptr = nv21;
-            for (int y=0; y<height; y++)
-            {
-                const unsigned char* y_data_ptr = y_data + y_rowStride * y;
-                for (int x=0; x<width; x++)
-                {
+            unsigned char *yptr = nv21;
+            for (int y = 0; y < height; y++) {
+                const unsigned char *y_data_ptr = y_data + y_rowStride * y;
+                for (int x = 0; x < width; x++) {
                     yptr[0] = y_data_ptr[0];
                     yptr++;
                     y_data_ptr += y_pixelStride;
@@ -103,13 +97,11 @@ static void onImageAvailable(void* context, AImageReader* reader)
             }
 
             // UV
-            unsigned char* uvptr = nv21 + width * height;
-            for (int y=0; y<height/2; y++)
-            {
-                const unsigned char* v_data_ptr = v_data + v_rowStride * y;
-                const unsigned char* u_data_ptr = u_data + u_rowStride * y;
-                for (int x=0; x<width/2; x++)
-                {
+            unsigned char *uvptr = nv21 + width * height;
+            for (int y = 0; y < height / 2; y++) {
+                const unsigned char *v_data_ptr = v_data + v_rowStride * y;
+                const unsigned char *u_data_ptr = u_data + u_rowStride * y;
+                for (int x = 0; x < width / 2; x++) {
                     uvptr[0] = v_data_ptr[0];
                     uvptr[1] = u_data_ptr[0];
                     uvptr += 2;
@@ -119,7 +111,7 @@ static void onImageAvailable(void* context, AImageReader* reader)
             }
         }
 
-        ((NdkCamera*)context)->on_image((unsigned char*)nv21, (int)width, (int)height);
+        ((NdkCamera *) context)->on_image((unsigned char *) nv21, (int) width, (int) height);
 
         delete[] nv21;
     }
@@ -127,43 +119,41 @@ static void onImageAvailable(void* context, AImageReader* reader)
     AImage_delete(image);
 }
 
-static void onSessionActive(void* context, ACameraCaptureSession *session)
-{
+static void onSessionActive(void *context, ACameraCaptureSession *session) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onSessionActive %p", session);
 }
 
-static void onSessionReady(void* context, ACameraCaptureSession *session)
-{
+static void onSessionReady(void *context, ACameraCaptureSession *session) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onSessionReady %p", session);
 }
 
-static void onSessionClosed(void* context, ACameraCaptureSession *session)
-{
+static void onSessionClosed(void *context, ACameraCaptureSession *session) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onSessionClosed %p", session);
 }
 
-void onCaptureFailed(void* context, ACameraCaptureSession* session, ACaptureRequest* request, ACameraCaptureFailure* failure)
-{
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureFailed %p %p %p", session, request, failure);
+void onCaptureFailed(void *context, ACameraCaptureSession *session, ACaptureRequest *request,
+                     ACameraCaptureFailure *failure) {
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureFailed %p %p %p", session, request,
+                        failure);
 }
 
-void onCaptureSequenceCompleted(void* context, ACameraCaptureSession* session, int sequenceId, int64_t frameNumber)
-{
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %ld", session, sequenceId, frameNumber);
+void onCaptureSequenceCompleted(void *context, ACameraCaptureSession *session, int sequenceId,
+                                int64_t frameNumber) {
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %ld",
+                        session, sequenceId, frameNumber);
 }
 
-void onCaptureSequenceAborted(void* context, ACameraCaptureSession* session, int sequenceId)
-{
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceAborted %p %d", session, sequenceId);
+void onCaptureSequenceAborted(void *context, ACameraCaptureSession *session, int sequenceId) {
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceAborted %p %d", session,
+                        sequenceId);
 }
 
-void onCaptureCompleted(void* context, ACameraCaptureSession* session, ACaptureRequest* request, const ACameraMetadata* result)
-{
+void onCaptureCompleted(void *context, ACameraCaptureSession *session, ACaptureRequest *request,
+                        const ACameraMetadata *result) {
 //     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureCompleted %p %p %p", session, request, result);
 }
 
-NdkCamera::NdkCamera()
-{
+NdkCamera::NdkCamera() {
     camera_facing = 0;
     camera_orientation = 0;
 
@@ -194,25 +184,21 @@ NdkCamera::NdkCamera()
     }
 }
 
-NdkCamera::~NdkCamera()
-{
+NdkCamera::~NdkCamera() {
     close();
 
-    if (image_reader)
-    {
+    if (image_reader) {
         AImageReader_delete(image_reader);
         image_reader = 0;
     }
 
-    if (image_reader_surface)
-    {
+    if (image_reader_surface) {
         ANativeWindow_release(image_reader_surface);
         image_reader_surface = 0;
     }
 }
 
-int NdkCamera::open(int _camera_facing)
-{
+int NdkCamera::open(int _camera_facing) {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "open");
 
     camera_facing = _camera_facing;
@@ -222,31 +208,28 @@ int NdkCamera::open(int _camera_facing)
     // find front camera
     std::string camera_id;
     {
-        ACameraIdList* camera_id_list = 0;
+        ACameraIdList *camera_id_list = 0;
         ACameraManager_getCameraIdList(camera_manager, &camera_id_list);
 
-        for (int i = 0; i < camera_id_list->numCameras; ++i)
-        {
-            const char* id = camera_id_list->cameraIds[i];
-            ACameraMetadata* camera_metadata = 0;
+        for (int i = 0; i < camera_id_list->numCameras; ++i) {
+            const char *id = camera_id_list->cameraIds[i];
+            ACameraMetadata *camera_metadata = 0;
             ACameraManager_getCameraCharacteristics(camera_manager, id, &camera_metadata);
 
             // query faceing
             acamera_metadata_enum_android_lens_facing_t facing = ACAMERA_LENS_FACING_FRONT;
             {
-                ACameraMetadata_const_entry e = { 0 };
+                ACameraMetadata_const_entry e = {0};
                 ACameraMetadata_getConstEntry(camera_metadata, ACAMERA_LENS_FACING, &e);
-                facing = (acamera_metadata_enum_android_lens_facing_t)e.data.u8[0];
+                facing = (acamera_metadata_enum_android_lens_facing_t) e.data.u8[0];
             }
 
-            if (camera_facing == 0 && facing != ACAMERA_LENS_FACING_FRONT)
-            {
+            if (camera_facing == 0 && facing != ACAMERA_LENS_FACING_FRONT) {
                 ACameraMetadata_free(camera_metadata);
                 continue;
             }
 
-            if (camera_facing == 1 && facing != ACAMERA_LENS_FACING_BACK)
-            {
+            if (camera_facing == 1 && facing != ACAMERA_LENS_FACING_BACK) {
                 ACameraMetadata_free(camera_metadata);
                 continue;
             }
@@ -256,10 +239,10 @@ int NdkCamera::open(int _camera_facing)
             // query orientation
             int orientation = 0;
             {
-                ACameraMetadata_const_entry e = { 0 };
+                ACameraMetadata_const_entry e = {0};
                 ACameraMetadata_getConstEntry(camera_metadata, ACAMERA_SENSOR_ORIENTATION, &e);
 
-                orientation = (int)e.data.i32[0];
+                orientation = (int) e.data.i32[0];
             }
 
             camera_orientation = orientation;
@@ -272,7 +255,8 @@ int NdkCamera::open(int _camera_facing)
         ACameraManager_deleteCameraIdList(camera_id_list);
     }
 
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "open %s %d", camera_id.c_str(), camera_orientation);
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "open %s %d", camera_id.c_str(),
+                        camera_orientation);
 
     // open camera
     {
@@ -281,7 +265,8 @@ int NdkCamera::open(int _camera_facing)
         camera_device_state_callbacks.onDisconnected = onDisconnected;
         camera_device_state_callbacks.onError = onError;
 
-        ACameraManager_openCamera(camera_manager, camera_id.c_str(), &camera_device_state_callbacks, &camera_device);
+        ACameraManager_openCamera(camera_manager, camera_id.c_str(), &camera_device_state_callbacks,
+                                  &camera_device);
     }
 
     // capture request
@@ -304,9 +289,12 @@ int NdkCamera::open(int _camera_facing)
 
         ACaptureSessionOutput_create(image_reader_surface, &capture_session_output);
 
-        ACaptureSessionOutputContainer_add(capture_session_output_container, capture_session_output);
+        ACaptureSessionOutputContainer_add(capture_session_output_container,
+                                           capture_session_output);
 
-        ACameraDevice_createCaptureSession(camera_device, capture_session_output_container, &camera_capture_session_state_callbacks, &capture_session);
+        ACameraDevice_createCaptureSession(camera_device, capture_session_output_container,
+                                           &camera_capture_session_state_callbacks,
+                                           &capture_session);
 
         ACameraCaptureSession_captureCallbacks camera_capture_session_capture_callbacks;
         camera_capture_session_capture_callbacks.context = this;
@@ -318,91 +306,79 @@ int NdkCamera::open(int _camera_facing)
         camera_capture_session_capture_callbacks.onCaptureSequenceAborted = onCaptureSequenceAborted;
         camera_capture_session_capture_callbacks.onCaptureBufferLost = 0;
 
-        ACameraCaptureSession_setRepeatingRequest(capture_session, &camera_capture_session_capture_callbacks, 1, &capture_request, nullptr);
+        ACameraCaptureSession_setRepeatingRequest(capture_session,
+                                                  &camera_capture_session_capture_callbacks, 1,
+                                                  &capture_request, nullptr);
     }
 
     return 0;
 }
 
-void NdkCamera::close()
-{
+void NdkCamera::close() {
     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "close");
 
-    if (capture_session)
-    {
+    if (capture_session) {
         ACameraCaptureSession_stopRepeating(capture_session);
         ACameraCaptureSession_close(capture_session);
         capture_session = 0;
     }
 
-    if (camera_device)
-    {
+    if (camera_device) {
         ACameraDevice_close(camera_device);
         camera_device = 0;
     }
 
-    if (capture_session_output_container)
-    {
+    if (capture_session_output_container) {
         ACaptureSessionOutputContainer_free(capture_session_output_container);
         capture_session_output_container = 0;
     }
 
-    if (capture_session_output)
-    {
+    if (capture_session_output) {
         ACaptureSessionOutput_free(capture_session_output);
         capture_session_output = 0;
     }
 
-    if (capture_request)
-    {
+    if (capture_request) {
         ACaptureRequest_free(capture_request);
         capture_request = 0;
     }
 
-    if (image_reader_target)
-    {
+    if (image_reader_target) {
         ACameraOutputTarget_free(image_reader_target);
         image_reader_target = 0;
     }
 
-    if (camera_manager)
-    {
+    if (camera_manager) {
         ACameraManager_delete(camera_manager);
         camera_manager = 0;
     }
 }
 
-void NdkCamera::on_image(const cv::Mat& rgb) const
-{
+void NdkCamera::on_image(const cv::Mat &rgb) const {
 }
 
-void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
-{
+void NdkCamera::on_image(const unsigned char *nv21, int nv21_width, int nv21_height) const {
     // rotate nv21
     int w = 0;
     int h = 0;
     int rotate_type = 0;
     {
-        if (camera_orientation == 0)
-        {
+        if (camera_orientation == 0) {
             w = nv21_width;
             h = nv21_height;
             rotate_type = camera_facing == 0 ? 2 : 1;
         }
-        if (camera_orientation == 90)
-        {
+        if (camera_orientation == 90) {
             w = nv21_height;
             h = nv21_width;
             rotate_type = camera_facing == 0 ? 5 : 6;
         }
-        if (camera_orientation == 180)
-        {
+        if (camera_orientation == 180) {
             w = nv21_width;
             h = nv21_height;
             rotate_type = camera_facing == 0 ? 4 : 3;
         }
-        if (camera_orientation == 270)
-        {
+        if (camera_orientation == 270) {
             w = nv21_height;
             h = nv21_width;
             rotate_type = camera_facing == 0 ? 7 : 8;
@@ -410,19 +386,19 @@ void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_hei
     }
 
     cv::Mat nv21_rotated(h + h / 2, w, CV_8UC1);
-    ncnn::kanna_rotate_yuv420sp(nv21, nv21_width, nv21_height, nv21_rotated.data, w, h, rotate_type);
+    Rotate::kanna_rotate_yuv420sp(nv21, nv21_width, nv21_height, nv21_rotated.data, w, h,
+                                rotate_type);
 
     // nv21_rotated to rgb
     cv::Mat rgb(h, w, CV_8UC3);
-    ncnn::yuv420sp2rgb(nv21_rotated.data, w, h, rgb.data);
+    Yuv2Rgb::yuv420sp2rgb(nv21_rotated.data, w, h, rgb.data);
 
     on_image(rgb);
 }
 
 static const int NDKCAMERAWINDOW_ID = 233;
 
-NdkCameraWindow::NdkCameraWindow() : NdkCamera()
-{
+NdkCameraWindow::NdkCameraWindow() : NdkCamera() {
     sensor_manager = 0;
     sensor_event_queue = 0;
     accelerometer_sensor = 0;
@@ -433,33 +409,28 @@ NdkCameraWindow::NdkCameraWindow() : NdkCamera()
     // sensor
     sensor_manager = ASensorManager_getInstance();
 
-    accelerometer_sensor = ASensorManager_getDefaultSensor(sensor_manager, ASENSOR_TYPE_ACCELEROMETER);
+    accelerometer_sensor = ASensorManager_getDefaultSensor(sensor_manager,
+                                                           ASENSOR_TYPE_ACCELEROMETER);
 }
 
-NdkCameraWindow::~NdkCameraWindow()
-{
-    if (accelerometer_sensor)
-    {
+NdkCameraWindow::~NdkCameraWindow() {
+    if (accelerometer_sensor) {
         ASensorEventQueue_disableSensor(sensor_event_queue, accelerometer_sensor);
         accelerometer_sensor = 0;
     }
 
-    if (sensor_event_queue)
-    {
+    if (sensor_event_queue) {
         ASensorManager_destroyEventQueue(sensor_manager, sensor_event_queue);
         sensor_event_queue = 0;
     }
 
-    if (win)
-    {
+    if (win) {
         ANativeWindow_release(win);
     }
 }
 
-void NdkCameraWindow::set_window(ANativeWindow* _win)
-{
-    if (win)
-    {
+void NdkCameraWindow::set_window(ANativeWindow *_win) {
+    if (win) {
         ANativeWindow_release(win);
     }
 
@@ -467,54 +438,45 @@ void NdkCameraWindow::set_window(ANativeWindow* _win)
     ANativeWindow_acquire(win);
 }
 
-void NdkCameraWindow::on_image_render(cv::Mat& rgb) const
-{
+void NdkCameraWindow::on_image_render(cv::Mat &rgb) const {
 }
 
-void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
-{
+void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv21_height) const {
     // resolve orientation from camera_orientation and accelerometer_sensor
     {
-        if (!sensor_event_queue)
-        {
-            sensor_event_queue = ASensorManager_createEventQueue(sensor_manager, ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS), NDKCAMERAWINDOW_ID, 0, 0);
+        if (!sensor_event_queue) {
+            sensor_event_queue = ASensorManager_createEventQueue(sensor_manager, ALooper_prepare(
+                    ALOOPER_PREPARE_ALLOW_NON_CALLBACKS), NDKCAMERAWINDOW_ID, 0, 0);
 
             ASensorEventQueue_enableSensor(sensor_event_queue, accelerometer_sensor);
         }
 
         int id = ALooper_pollAll(0, 0, 0, 0);
-        if (id == NDKCAMERAWINDOW_ID)
-        {
+        if (id == NDKCAMERAWINDOW_ID) {
             ASensorEvent e[8];
             ssize_t num_event = 0;
-            while (ASensorEventQueue_hasEvents(sensor_event_queue) == 1)
-            {
+            while (ASensorEventQueue_hasEvents(sensor_event_queue) == 1) {
                 num_event = ASensorEventQueue_getEvents(sensor_event_queue, e, 8);
                 if (num_event < 0)
                     break;
             }
 
-            if (num_event > 0)
-            {
+            if (num_event > 0) {
                 float acceleration_x = e[num_event - 1].acceleration.x;
                 float acceleration_y = e[num_event - 1].acceleration.y;
                 float acceleration_z = e[num_event - 1].acceleration.z;
 //                 __android_log_print(ANDROID_LOG_WARN, "NdkCameraWindow", "x = %f, y = %f, z = %f", x, y, z);
 
-                if (acceleration_y > 7)
-                {
+                if (acceleration_y > 7) {
                     accelerometer_orientation = 180;
                 }
-                if (acceleration_x < -7)
-                {
+                if (acceleration_x < -7) {
                     accelerometer_orientation = 270;
                 }
-                if (acceleration_y < -7)
-                {
+                if (acceleration_y < -7) {
                     accelerometer_orientation = 0;
                 }
-                if (acceleration_x > 7)
-                {
+                if (acceleration_x > 7) {
                     accelerometer_orientation = 90;
                 }
             }
@@ -538,24 +500,19 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
         int win_w = ANativeWindow_getWidth(win);
         int win_h = ANativeWindow_getHeight(win);
 
-        if (accelerometer_orientation == 90 || accelerometer_orientation == 270)
-        {
+        if (accelerometer_orientation == 90 || accelerometer_orientation == 270) {
             std::swap(win_w, win_h);
         }
 
         const int final_orientation = (camera_orientation + accelerometer_orientation) % 360;
 
-        if (final_orientation == 0 || final_orientation == 180)
-        {
-            if (win_w * nv21_height > win_h * nv21_width)
-            {
+        if (final_orientation == 0 || final_orientation == 180) {
+            if (win_w * nv21_height > win_h * nv21_width) {
                 roi_w = nv21_width;
                 roi_h = (nv21_width * win_h / win_w) / 2 * 2;
                 roi_x = 0;
                 roi_y = ((nv21_height - roi_h) / 2) / 2 * 2;
-            }
-            else
-            {
+            } else {
                 roi_h = nv21_height;
                 roi_w = (nv21_height * win_w / win_h) / 2 * 2;
                 roi_x = ((nv21_width - roi_w) / 2) / 2 * 2;
@@ -567,17 +524,13 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
             nv21_roi_w = roi_w;
             nv21_roi_h = roi_h;
         }
-        if (final_orientation == 90 || final_orientation == 270)
-        {
-            if (win_w * nv21_width > win_h * nv21_height)
-            {
+        if (final_orientation == 90 || final_orientation == 270) {
+            if (win_w * nv21_width > win_h * nv21_height) {
                 roi_w = nv21_height;
                 roi_h = (nv21_height * win_h / win_w) / 2 * 2;
                 roi_x = 0;
                 roi_y = ((nv21_width - roi_h) / 2) / 2 * 2;
-            }
-            else
-            {
+            } else {
                 roi_h = nv21_width;
                 roi_w = (nv21_width * win_w / win_h) / 2 * 2;
                 roi_x = ((nv21_height - roi_w) / 2) / 2 * 2;
@@ -590,113 +543,86 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
             nv21_roi_h = roi_w;
         }
 
-        if (camera_facing == 0)
-        {
-            if (camera_orientation == 0 && accelerometer_orientation == 180)
-            {
+        if (camera_facing == 0) {
+            if (camera_orientation == 0 && accelerometer_orientation == 180) {
                 rotate_type = 2;
             }
-            if (camera_orientation == 0 && accelerometer_orientation == 270)
-            {
+            if (camera_orientation == 0 && accelerometer_orientation == 270) {
                 rotate_type = 7;
             }
-            if (camera_orientation == 0 && accelerometer_orientation == 0)
-            {
+            if (camera_orientation == 0 && accelerometer_orientation == 0) {
                 rotate_type = 4;
             }
-            if (camera_orientation == 0 && accelerometer_orientation == 90)
-            {
+            if (camera_orientation == 0 && accelerometer_orientation == 90) {
                 rotate_type = 5;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 180)
-            {
+            if (camera_orientation == 90 && accelerometer_orientation == 180) {
                 rotate_type = 5;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 270)
-            {
+            if (camera_orientation == 90 && accelerometer_orientation == 270) {
                 rotate_type = 2;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 0)
-            {
+            if (camera_orientation == 90 && accelerometer_orientation == 0) {
                 rotate_type = 7;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 90)
-            {
+            if (camera_orientation == 90 && accelerometer_orientation == 90) {
                 rotate_type = 4;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 180)
-            {
+            if (camera_orientation == 180 && accelerometer_orientation == 180) {
                 rotate_type = 4;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 270)
-            {
+            if (camera_orientation == 180 && accelerometer_orientation == 270) {
                 rotate_type = 5;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 0)
-            {
+            if (camera_orientation == 180 && accelerometer_orientation == 0) {
                 rotate_type = 2;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 90)
-            {
+            if (camera_orientation == 180 && accelerometer_orientation == 90) {
                 rotate_type = 7;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 180)
-            {
+            if (camera_orientation == 270 && accelerometer_orientation == 180) {
                 rotate_type = 7;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 270)
-            {
+            if (camera_orientation == 270 && accelerometer_orientation == 270) {
                 rotate_type = 4;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 00)
-            {
+            if (camera_orientation == 270 && accelerometer_orientation == 00) {
                 rotate_type = 5;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 90)
-            {
+            if (camera_orientation == 270 && accelerometer_orientation == 90) {
                 rotate_type = 2;
             }
-        }
-        else
-        {
-            if (final_orientation == 0)
-            {
+        } else {
+            if (final_orientation == 0) {
                 rotate_type = 1;
             }
-            if (final_orientation == 90)
-            {
+            if (final_orientation == 90) {
                 rotate_type = 6;
             }
-            if (final_orientation == 180)
-            {
+            if (final_orientation == 180) {
                 rotate_type = 3;
             }
-            if (final_orientation == 270)
-            {
+            if (final_orientation == 270) {
                 rotate_type = 8;
             }
         }
 
-        if (accelerometer_orientation == 0)
-        {
+        if (accelerometer_orientation == 0) {
             render_w = roi_w;
             render_h = roi_h;
             render_rotate_type = 1;
         }
-        if (accelerometer_orientation == 90)
-        {
+        if (accelerometer_orientation == 90) {
             render_w = roi_h;
             render_h = roi_w;
             render_rotate_type = 8;
         }
-        if (accelerometer_orientation == 180)
-        {
+        if (accelerometer_orientation == 180) {
             render_w = roi_w;
             render_h = roi_h;
             render_rotate_type = 3;
         }
-        if (accelerometer_orientation == 270)
-        {
+        if (accelerometer_orientation == 270) {
             render_w = roi_h;
             render_h = roi_w;
             render_rotate_type = 6;
@@ -706,42 +632,44 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
     // crop and rotate nv21
     cv::Mat nv21_croprotated(roi_h + roi_h / 2, roi_w, CV_8UC1);
     {
-        const unsigned char* srcY = nv21 + nv21_roi_y * nv21_width + nv21_roi_x;
-        unsigned char* dstY = nv21_croprotated.data;
-        ncnn::kanna_rotate_c1(srcY, nv21_roi_w, nv21_roi_h, nv21_width, dstY, roi_w, roi_h, roi_w, rotate_type);
+        const unsigned char *srcY = nv21 + nv21_roi_y * nv21_width + nv21_roi_x;
+        unsigned char *dstY = nv21_croprotated.data;
+        Rotate::kanna_rotate_c1(srcY, nv21_roi_w, nv21_roi_h, nv21_width, dstY, roi_w, roi_h, roi_w,
+                              rotate_type);
 
-        const unsigned char* srcUV = nv21 + nv21_width * nv21_height + nv21_roi_y * nv21_width / 2 + nv21_roi_x;
-        unsigned char* dstUV = nv21_croprotated.data + roi_w * roi_h;
-        ncnn::kanna_rotate_c2(srcUV, nv21_roi_w / 2, nv21_roi_h / 2, nv21_width, dstUV, roi_w / 2, roi_h / 2, roi_w, rotate_type);
+        const unsigned char *srcUV =
+                nv21 + nv21_width * nv21_height + nv21_roi_y * nv21_width / 2 + nv21_roi_x;
+        unsigned char *dstUV = nv21_croprotated.data + roi_w * roi_h;
+        Rotate::kanna_rotate_c2(srcUV, nv21_roi_w / 2, nv21_roi_h / 2, nv21_width, dstUV, roi_w / 2,
+                              roi_h / 2, roi_w, rotate_type);
     }
 
     // nv21_croprotated to rgb
     cv::Mat rgb(roi_h, roi_w, CV_8UC3);
-    ncnn::yuv420sp2rgb(nv21_croprotated.data, roi_w, roi_h, rgb.data);
-
+    Yuv2Rgb::yuv420sp2rgb(nv21_croprotated.data, roi_w, roi_h, rgb.data);
     on_image_render(rgb);
 
     // rotate to native window orientation
     cv::Mat rgb_render(render_h, render_w, CV_8UC3);
-    ncnn::kanna_rotate_c3(rgb.data, roi_w, roi_h, rgb_render.data, render_w, render_h, render_rotate_type);
+    Rotate::kanna_rotate_c3(rgb.data, roi_w, roi_h, rgb_render.data, render_w, render_h,
+                          render_rotate_type);
 
-    ANativeWindow_setBuffersGeometry(win, render_w, render_h, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
+    ANativeWindow_setBuffersGeometry(win, render_w, render_h,
+                                     AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
 
     ANativeWindow_Buffer buf;
     ANativeWindow_lock(win, &buf, NULL);
 
     // scale to target size
-    if (buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM || buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM)
-    {
-        for (int y = 0; y < render_h; y++)
-        {
-            const unsigned char* ptr = rgb_render.ptr<const unsigned char>(y);
-            unsigned char* outptr = (unsigned char*)buf.bits + buf.stride * 4 * y;
+    if (buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM ||
+        buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM) {
+        for (int y = 0; y < render_h; y++) {
+            const unsigned char *ptr = rgb_render.ptr<const unsigned char>(y);
+            unsigned char *outptr = (unsigned char *) buf.bits + buf.stride * 4 * y;
 
             int x = 0;
 #if __ARM_NEON
-            for (; x + 7 < render_w; x += 8)
-            {
+            for (; x + 7 < render_w; x += 8) {
                 uint8x8x3_t _rgb = vld3_u8(ptr);
                 uint8x8x4_t _rgba;
                 _rgba.val[0] = _rgb.val[0];
@@ -754,8 +682,7 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
                 outptr += 32;
             }
 #endif // __ARM_NEON
-            for (; x < render_w; x++)
-            {
+            for (; x < render_w; x++) {
                 outptr[0] = ptr[0];
                 outptr[1] = ptr[1];
                 outptr[2] = ptr[2];

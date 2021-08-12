@@ -1,3 +1,6 @@
+//
+// Created by bli on 2021/7/16.
+//
 package com.oal.insightface;
 
 
@@ -5,15 +8,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.Button;
 
 import com.oal.insightface.utils.PermissionUtils;
 
-public class MainActivity extends Activity  {
+public class MainActivity extends Activity {
 
-    private int current_cpugpu = 1;
+    private int currentCpuNpu = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +26,7 @@ public class MainActivity extends Activity  {
         buttonNPU.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                current_cpugpu = 1;
+                currentCpuNpu = 1;
                 startVideoWithFaceDetected();
             }
         });
@@ -33,18 +35,11 @@ public class MainActivity extends Activity  {
         buttonCpu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                current_cpugpu = 0;
+                currentCpuNpu = 0;
                 startVideoWithFaceDetected();
             }
         });
 
-//        Button buttonCameraX = (Button) findViewById(R.id.detct_CameraX);
-//        buttonCameraX.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View arg0) {
-//                jumpToCameraXActivity();
-//            }
-//        });
     }
 
     private void startVideoWithFaceDetected() {
@@ -56,15 +51,9 @@ public class MainActivity extends Activity  {
         });
     }
 
-    public void jumpToCameraXActivity() {
-        Intent intent = new Intent(MainActivity.this, FaceCameraxActivity.class);
-        intent.putExtra("current_cpugpu", String.valueOf(current_cpugpu));
-        startActivity(intent);
-    }
-
     public void jumpToCameraActivity() {
         Intent intent = new Intent(MainActivity.this, FaceActivity.class);
-        intent.putExtra("current_cpugpu", String.valueOf(current_cpugpu));
+        intent.putExtra("currentCpuNpu", String.valueOf(currentCpuNpu));
         startActivity(intent);
     }
 
