@@ -41,7 +41,7 @@ const float DEFAULT_NMS_THRESHOLD = 0.3f;
 static SCRFD *scrfdface;
 
 
-//Drwa Face
+//Draw Face
 static int drawFace(cv::Mat &rgb, std::vector<region> &faces) {
     for (auto &face : faces) {
         fprintf(stderr, "%.5f at %.2f %.2f %.2f x %.2f\n", face.confidence, face.box.x, face.box.y,
