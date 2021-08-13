@@ -57,6 +57,6 @@
 ## 参考
 
 1. [Tengine](https://github.com/OAID/Tengine)
-2. [NCNN](https://github.com/OAID/Tengine)
+2. [ncnn](https://github.com/Tencent/ncnn)
 3. [opencv-mobile](https://github.com/nihui/opencv-mobile)
 4. [ncnn-android-nanodet](https://github.com/nihui/ncnn-android-nanodet)
