@@ -5,22 +5,19 @@
 #include <android/asset_manager_jni.h>
 #include <android/native_window_jni.h>
 #include <android/native_window.h>
-
 #include <android/log.h>
-
 #include <jni.h>
-
 #include <string>
 #include <vector>
 
-#include "include/ndkcamera.h"
+#include "ndkcamera.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
-#include "include/AndroidLog.h"
-#include "algorithm/scrfd.hpp"
+#include "AndroidLog.h"
+#include "scrfd.hpp"
 #include "utility/timer.hpp"
 #include <algorithm>
 #include <numeric>
@@ -38,7 +35,7 @@ const int MODEL_HEIGHT = 384;
 const float DEFAULT_SCORE_THRESHOLD = 0.45f;
 const float DEFAULT_NMS_THRESHOLD = 0.3f;
 
-static SCRFD *scrfdface;
+static SCRFD *scrfdFace;
 
 
 //Draw Face
@@ -75,13 +72,13 @@ public:
     virtual void on_image_render(cv::Mat &rgb) const;
 };
 
-static FaceNdkCamera *g_camera = 0;
+static FaceNdkCamera *gCamera = 0;
 
 /*
  * Do Detect
  */
 void FaceNdkCamera::on_image_render(cv::Mat &rgb) const {
-    if (scrfdface) {
+    if (scrfdFace) {
         auto score_threshold = DEFAULT_SCORE_THRESHOLD;
         auto iou_threshold = DEFAULT_NMS_THRESHOLD;
         std::vector<region> faces;
@@ -89,7 +86,7 @@ void FaceNdkCamera::on_image_render(cv::Mat &rgb) const {
         image_flip = rgb;
         Timer det_timer;
 //        LOGD("Start detect face");
-        scrfdface->Detect(image_flip, faces, score_threshold, iou_threshold);
+        scrfdFace->Detect(image_flip, faces, score_threshold, iou_threshold);
 //        LOGD("Successfully detect face");
         double cost_time = det_timer.TimeCost();
 //        LOGD("CostTime %.2f", cost_time);
@@ -110,8 +107,8 @@ char *device = NULL;
 
 JNIEXPORT void JNICALL
 Java_com_oal_insightface_FaceTengine_release(JNIEnv *env, jclass) {
-    if (scrfdface) {
-        delete scrfdface;
+    if (scrfdFace) {
+        delete scrfdFace;
     }
 
 }
@@ -125,9 +122,8 @@ JNI_OnLoad(JavaVM
            void *reserved
 ) {
     LOGD("JNI_OnLoad");
-    g_camera = new FaceNdkCamera;
-    g_camera->
-            camera_facing = 1; //TIM3
+    gCamera = new FaceNdkCamera;
+    gCamera->camera_facing = 1; //TIM3
     return
             JNI_VERSION_1_4;
 }
@@ -135,12 +131,12 @@ JNI_OnLoad(JavaVM
 JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
     LOGD("JNI_OnUnload");
     {
-        if (scrfdface) {
-            delete scrfdface;
+        if (scrfdFace) {
+            delete scrfdFace;
         }
     }
-    delete g_camera;
-    g_camera = 0;
+    delete gCamera;
+    gCamera = 0;
 }
 
 /*
@@ -149,15 +145,13 @@ JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
 JNIEXPORT jboolean
 JNICALL
 Java_com_oal_insightface_FaceTengine_loadModel(JNIEnv *env, jobject
-thiz,
-                                               jint cpugpu
-) {
+thiz, int cpuNpu) {
     init_tengine();
 
     cv::Size input_shape(MODEL_WIDTH, MODEL_HEIGHT);
-    scrfdface = new SCRFD();
+    scrfdFace = new SCRFD();
 
-    if (cpugpu) {
+    if (cpuNpu) {
         model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_uint8.tmfile";
         device = "TIMVX";
     } else {
@@ -165,7 +159,7 @@ thiz,
         device = "CPU";
     }
 
-    auto ret = scrfdface->Load(model_path, input_shape, device);
+    auto ret = scrfdFace->Load(model_path, input_shape, device);
     if (!ret) {
         return
                 JNI_FALSE;
@@ -188,7 +182,7 @@ thiz,
         return
                 JNI_FALSE;
     LOGD("openCamera %d", facing);
-    g_camera->open((int) facing);
+    gCamera->open((int) facing);
     return
             JNI_TRUE;
 }
@@ -199,7 +193,7 @@ JNICALL
 Java_com_oal_insightface_FaceTengine_closeCamera(JNIEnv *env, jobject
 thiz) {
     LOGD("closeCamera");
-    g_camera->
+    gCamera->
 
             close();
 
@@ -211,13 +205,10 @@ thiz) {
 JNIEXPORT jboolean
 JNICALL
 Java_com_oal_insightface_FaceTengine_setOutputWindow(JNIEnv *env, jobject
-thiz,
-                                                     jobject surface
-) {
+thiz, jobject surface) {
     ANativeWindow *win = ANativeWindow_fromSurface(env, surface);
     LOGD("setOutputWindow %p", win);
-    g_camera->
-            set_window(win);
+    gCamera->set_window(win);
 
     return
             JNI_TRUE;

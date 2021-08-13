@@ -6,6 +6,7 @@ set(distribution_DIR ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/image)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utility)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
 
 set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/opencv-mobile-3.4.15-android/sdk/native/jni)
 find_package(OpenCV REQUIRED core imgproc)
@@ -25,7 +26,6 @@ list(APPEND SCRFD_SRCS utility/permute.cc)
 list(APPEND SCRFD_SRCS utility/nms.cc)
 list(APPEND SCRFD_SRCS utility/iou.cc)
 list(APPEND SCRFD_SRCS utility/timer.cc)
-
 # Camera
 list(APPEND SCRFD_SRCS ndkcamera.cpp)
 list(APPEND SCRFD_SRCS include/image/YuvConverter.cpp)
