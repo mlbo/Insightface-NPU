@@ -50,6 +50,8 @@
 
 下载[opencv-mobile-3.4.15-android.zip](https://github.com/nihui/opencv-mobile/releases/download/v13/opencv-mobile-3.4.15-android.zip)，然后解压放入jni目录
 
+## TODO
+- [ ] 针对Android手机性能优化
 
 
 ## 参考
