@@ -28,9 +28,15 @@
 
 ## 编译环境搭建
 
+参考[Insightface-NPU/app/build.gradle](https://github.com/mlbo/Insightface-NPU/blob/master/app/build.gradle)
+### Android SDK
+```
+  minSdkVersion 24
+  targetSdkVersion 30
+```
+
 ### Android NDK
 
-参考[Insightface-NPU/app/build.gradle](https://github.com/mlbo/Insightface-NPU/blob/master/app/build.gradle#L18)
 ```
   ndk {
       moduleName "tengine-lite"
