@@ -123,7 +123,7 @@ JNI_OnLoad(JavaVM
 ) {
     LOGD("JNI_OnLoad");
     gCamera = new FaceNdkCamera;
-    gCamera->camera_facing = 1; //TIM3
+    gCamera->camera_facing = 1; //For Khadas VIM3
     return
             JNI_VERSION_1_4;
 }
@@ -145,21 +145,27 @@ JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
 JNIEXPORT jboolean
 JNICALL
 Java_com_oal_insightface_FaceTengine_loadModel(JNIEnv *env, jobject
-thiz, int cpuNpu) {
+thiz, int cpuNpu,jstring modelPath) {
     init_tengine();
-
+    const char *path = env->GetStringUTFChars(modelPath, nullptr);
+    env->ReleaseStringUTFChars(modelPath, path);
     cv::Size input_shape(MODEL_WIDTH, MODEL_HEIGHT);
     scrfdFace = new SCRFD();
-
     if (cpuNpu) {
-        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_uint8.tmfile";
         device = "TIMVX";
     } else {
-        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_sim.tmfile";
         device = "CPU";
     }
+    auto ret = scrfdFace->Load(path, input_shape, device);
+//    if (cpuNpu) {
+//        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_uint8.tmfile";
+//        device = "TIMVX";
+//    } else {
+//        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_sim.tmfile";
+//        device = "CPU";
+//    }
 
-    auto ret = scrfdFace->Load(model_path, input_shape, device);
+//    auto ret = scrfdFace->Load(model_path, input_shape, device);
     if (!ret) {
         return
                 JNI_FALSE;

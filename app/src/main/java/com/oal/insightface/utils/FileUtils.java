@@ -12,7 +12,7 @@ import java.io.RandomAccessFile;
 
 public class FileUtils {
     public static void copyAllAssets(FaceActivity context, String destination) {
-        copyAssetsToDst(context, "", destination);
+        copyAssetsToDst(context, "models", destination);
     }
 
     /**
@@ -27,7 +27,7 @@ public class FileUtils {
                 File file = new File(dstPath);
                 file.mkdirs();
                 for (String fileName : fileNames) {
-                    if (srcPath != "") {
+                    if (srcPath != ""  && fileName.endsWith("tmfile")) {
                         copyAssetsToDst(context, srcPath + "/" + fileName, dstPath + "/" + fileName);
                     } else {
                         copyAssetsToDst(context, fileName, dstPath + "/" + fileName);

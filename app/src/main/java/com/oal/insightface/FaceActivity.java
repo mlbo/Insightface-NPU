@@ -21,19 +21,25 @@ import androidx.core.content.ContextCompat;
 
 import com.oal.insightface.utils.FileUtils;
 
+import java.io.File;
+
 public class FaceActivity extends Activity implements SurfaceHolder.Callback {
     public static final int REQUEST_CAMERA = 100;
-    private int facing = 1;  //For TIM3 Camera
+    private int facing = 1;  //For Khadas VIM3 Camera
     private int currentCpuNpu = 1; //CPU 0 NPU 1
     private SurfaceView cameraView;
     private FaceTengine faceTengine = new FaceTengine();
-
+    private String modelPathString;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_face);
 
-        FileUtils.copyAllAssets(this, "sdcard/OAL/");
+        //Copy model from assets to device
+        File modelPath = getExternalFilesDir("Models");
+        modelPathString = modelPath.toString();
+//        Log.d("modelPath",modelPathString);
+        FileUtils.copyAllAssets(this,modelPathString);
 
         String Device = getIntent().getStringExtra("currentCpuNpu");
         currentCpuNpu = Integer.parseInt(Device);
@@ -47,8 +53,13 @@ public class FaceActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private void reload() {
-
-        boolean ret_init = faceTengine.loadModel(currentCpuNpu);
+        Log.e("",modelPathString);
+        if(currentCpuNpu==1){
+            modelPathString = modelPathString + "/scrfd_2.5g_bnkps_uint8.tmfile";
+        }
+        else modelPathString = modelPathString + "/scrfd_2.5g_bnkps_sim.tmfile";
+        Log.e("model",modelPathString);
+        boolean ret_init = faceTengine.loadModel(currentCpuNpu,modelPathString);
         if (!ret_init) {
             Log.e("MainActivity", "Tengine loadModel failed");
         }

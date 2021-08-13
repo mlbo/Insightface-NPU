@@ -8,7 +8,7 @@ package com.oal.insightface;
 import android.view.Surface;
 
 public class FaceTengine {
-    public native boolean loadModel(int cpugpu);
+    public native boolean loadModel(int cpugpu,String modelPath);
 
     public native boolean openCamera(int facing);
 
