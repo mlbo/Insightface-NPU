@@ -387,7 +387,7 @@ void NdkCamera::on_image(const unsigned char *nv21, int nv21_width, int nv21_hei
 
     cv::Mat nv21_rotated(h + h / 2, w, CV_8UC1);
     Rotate::kanna_rotate_yuv420sp(nv21, nv21_width, nv21_height, nv21_rotated.data, w, h,
-                                rotate_type);
+                                  rotate_type);
 
     // nv21_rotated to rgb
     cv::Mat rgb(h, w, CV_8UC3);
@@ -468,6 +468,21 @@ void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv
 //                 __android_log_print(ANDROID_LOG_WARN, "NdkCameraWindow", "x = %f, y = %f, z = %f", x, y, z);
 
                 if (acceleration_y > 7) {
+                    accelerometer_orientation = 0;
+                }
+                if (acceleration_x < -7) {
+                    accelerometer_orientation = 90;
+                }
+                if (acceleration_y < -7) {
+                    accelerometer_orientation = 180;
+                }
+                if (acceleration_x > 7) {
+                    accelerometer_orientation = 270;
+                }
+
+//  For Khadas VIM3 Camera
+#ifndef __aarch64__
+                if (acceleration_y > 7) {
                     accelerometer_orientation = 180;
                 }
                 if (acceleration_x < -7) {
@@ -479,6 +494,8 @@ void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv
                 if (acceleration_x > 7) {
                     accelerometer_orientation = 90;
                 }
+#endif
+
             }
         }
     }
@@ -544,52 +561,52 @@ void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv
         }
 
         if (camera_facing == 0) {
-            if (camera_orientation == 0 && accelerometer_orientation == 180) {
-                rotate_type = 2;
-            }
-            if (camera_orientation == 0 && accelerometer_orientation == 270) {
-                rotate_type = 7;
-            }
             if (camera_orientation == 0 && accelerometer_orientation == 0) {
-                rotate_type = 4;
+                rotate_type = 2;
             }
             if (camera_orientation == 0 && accelerometer_orientation == 90) {
-                rotate_type = 5;
+                rotate_type = 7;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 180) {
-                rotate_type = 5;
+            if (camera_orientation == 0 && accelerometer_orientation == 180) {
+                rotate_type = 4;
             }
-            if (camera_orientation == 90 && accelerometer_orientation == 270) {
-                rotate_type = 2;
+            if (camera_orientation == 0 && accelerometer_orientation == 270) {
+                rotate_type = 5;
             }
             if (camera_orientation == 90 && accelerometer_orientation == 0) {
-                rotate_type = 7;
+                rotate_type = 5;
             }
             if (camera_orientation == 90 && accelerometer_orientation == 90) {
-                rotate_type = 4;
-            }
-            if (camera_orientation == 180 && accelerometer_orientation == 180) {
-                rotate_type = 4;
-            }
-            if (camera_orientation == 180 && accelerometer_orientation == 270) {
-                rotate_type = 5;
-            }
-            if (camera_orientation == 180 && accelerometer_orientation == 0) {
                 rotate_type = 2;
             }
-            if (camera_orientation == 180 && accelerometer_orientation == 90) {
+            if (camera_orientation == 90 && accelerometer_orientation == 180) {
                 rotate_type = 7;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 180) {
-                rotate_type = 7;
-            }
-            if (camera_orientation == 270 && accelerometer_orientation == 270) {
+            if (camera_orientation == 90 && accelerometer_orientation == 270) {
                 rotate_type = 4;
             }
-            if (camera_orientation == 270 && accelerometer_orientation == 00) {
+            if (camera_orientation == 180 && accelerometer_orientation == 0) {
+                rotate_type = 4;
+            }
+            if (camera_orientation == 180 && accelerometer_orientation == 90) {
                 rotate_type = 5;
             }
+            if (camera_orientation == 180 && accelerometer_orientation == 180) {
+                rotate_type = 2;
+            }
+            if (camera_orientation == 180 && accelerometer_orientation == 270) {
+                rotate_type = 7;
+            }
+            if (camera_orientation == 270 && accelerometer_orientation == 0) {
+                rotate_type = 7;
+            }
             if (camera_orientation == 270 && accelerometer_orientation == 90) {
+                rotate_type = 4;
+            }
+            if (camera_orientation == 270 && accelerometer_orientation == 180) {
+                rotate_type = 5;
+            }
+            if (camera_orientation == 270 && accelerometer_orientation == 270) {
                 rotate_type = 2;
             }
         } else {
@@ -635,13 +652,13 @@ void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv
         const unsigned char *srcY = nv21 + nv21_roi_y * nv21_width + nv21_roi_x;
         unsigned char *dstY = nv21_croprotated.data;
         Rotate::kanna_rotate_c1(srcY, nv21_roi_w, nv21_roi_h, nv21_width, dstY, roi_w, roi_h, roi_w,
-                              rotate_type);
+                                rotate_type);
 
         const unsigned char *srcUV =
                 nv21 + nv21_width * nv21_height + nv21_roi_y * nv21_width / 2 + nv21_roi_x;
         unsigned char *dstUV = nv21_croprotated.data + roi_w * roi_h;
         Rotate::kanna_rotate_c2(srcUV, nv21_roi_w / 2, nv21_roi_h / 2, nv21_width, dstUV, roi_w / 2,
-                              roi_h / 2, roi_w, rotate_type);
+                                roi_h / 2, roi_w, rotate_type);
     }
 
     // nv21_croprotated to rgb
@@ -652,7 +669,7 @@ void NdkCameraWindow::on_image(const unsigned char *nv21, int nv21_width, int nv
     // rotate to native window orientation
     cv::Mat rgb_render(render_h, render_w, CV_8UC3);
     Rotate::kanna_rotate_c3(rgb.data, roi_w, roi_h, rgb_render.data, render_w, render_h,
-                          render_rotate_type);
+                            render_rotate_type);
 
     ANativeWindow_setBuffersGeometry(win, render_w, render_h,
                                      AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
