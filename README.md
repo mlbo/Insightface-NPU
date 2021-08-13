@@ -50,11 +50,13 @@
 
 下载[opencv-mobile-3.4.15-android.zip](https://github.com/nihui/opencv-mobile/releases/download/v13/opencv-mobile-3.4.15-android.zip)，然后解压放入jni目录
 
+## TODO
+- [ ] 针对Android手机性能优化
 
 
 ## 参考
 
 1. [Tengine](https://github.com/OAID/Tengine)
-2. [NCNN](https://github.com/OAID/Tengine)
+2. [ncnn](https://github.com/Tencent/ncnn)
 3. [opencv-mobile](https://github.com/nihui/opencv-mobile)
 4. [ncnn-android-nanodet](https://github.com/nihui/ncnn-android-nanodet)
