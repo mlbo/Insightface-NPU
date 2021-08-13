@@ -161,8 +161,7 @@ thiz,
         model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_uint8.tmfile";
         device = "TIMVX";
     } else {
-//        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_sim.tmfile";
-        model_path = "/data/local/tmp/scrfd_2.5g_bnkps_sim.tmfile";
+        model_path = "/sdcard/OAL/scrfd_2.5g_bnkps_sim.tmfile";
         device = "CPU";
     }
 
